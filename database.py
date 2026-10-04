@@ -12,9 +12,17 @@ if not DATABASE_URL:
         "DATABASE_URL is missing from the .env file."
     )
 
+connect_args = {}
+
+if DATABASE_URL.startswith("mysql+pymysql://"):
+    connect_args = {
+        "ssl": {}
+    }
+
 engine = create_engine(
     DATABASE_URL,
     pool_pre_ping=True,
+    connect_args=connect_args,
 )
 
 SessionLocal = sessionmaker(
