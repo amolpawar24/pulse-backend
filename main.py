@@ -49,23 +49,11 @@ app = FastAPI(
 # ============================================================
 # CORS
 # ============================================================
-#
-# Development frontend can commonly run on:
-#
-#   http://localhost:5173
-#   http://127.0.0.1:5173
-#   http://localhost:5174
-#   http://127.0.0.1:5174
-#   http://localhost:3000
-#   http://127.0.0.1:3000
-#
-# Keeping these explicit is safer than using "*"
-# together with allow_credentials=True.
-#
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
+        # Local development
         "http://localhost:5173",
         "http://127.0.0.1:5173",
 
@@ -74,6 +62,9 @@ app.add_middleware(
 
         "http://localhost:3000",
         "http://127.0.0.1:3000",
+
+        # Production
+        "https://pulse-messaging.netlify.app",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -598,10 +589,6 @@ async def websocket_endpoint(
                     user_id,
                 )
 
-                # ----------------------------------------------
-                # VALIDATE MESSAGE ID
-                # ----------------------------------------------
-
                 if not isinstance(
                     message_id,
                     int,
@@ -612,10 +599,6 @@ async def websocket_endpoint(
                     )
                     continue
 
-                # ----------------------------------------------
-                # VALIDATE SENDER ID
-                # ----------------------------------------------
-
                 if not isinstance(
                     sender_id,
                     int,
@@ -625,10 +608,6 @@ async def websocket_endpoint(
                         "FOR READ RECEIPT"
                     )
                     continue
-
-                # ----------------------------------------------
-                # FIND MESSAGE
-                # ----------------------------------------------
 
                 message = db.get(
                     Message,
@@ -643,12 +622,6 @@ async def websocket_endpoint(
                     )
                     continue
 
-                # ----------------------------------------------
-                # SECURITY:
-                # ONLY THE RECEIVER CAN
-                # MARK THE MESSAGE AS READ
-                # ----------------------------------------------
-
                 if (
                     message.receiver_id
                     != user_id
@@ -658,11 +631,6 @@ async def websocket_endpoint(
                         user_id,
                     )
                     continue
-
-                # ----------------------------------------------
-                # SECURITY:
-                # VERIFY SENDER
-                # ----------------------------------------------
 
                 if (
                     message.sender_id
@@ -681,10 +649,6 @@ async def websocket_endpoint(
                     user_id,
                 )
 
-                # ----------------------------------------------
-                # SEND READ RECEIPT TO ORIGINAL SENDER
-                # ----------------------------------------------
-
                 await manager.send_to_user(
                     message.sender_id,
                     {
@@ -695,8 +659,7 @@ async def websocket_endpoint(
                 )
 
                 print(
-                    "READ RECEIPT SENT:"
-                    ,
+                    "READ RECEIPT SENT:",
                     message.id,
                 )
 
